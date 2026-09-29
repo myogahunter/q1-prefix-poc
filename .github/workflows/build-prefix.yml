@@ -1,0 +1,27 @@
+name: Build fork PR (checkout-exec, SHA-pinned pre-fix)
+
+# Q1 contrast — same shape as build.yml but actions/checkout pinned to v4.1.7
+# (692973e3d937129bcbf40652eb9f2f61becf3332, published 2024-06-12), which PREDATES
+# the June/July 2026 hardening. This should STILL check out the fork head SHA and
+# execute attacker code — demonstrating that SHA-pinning to a pre-fix checkout is a
+# live residual surface even after the floating @v4 tag was patched.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork PR head (v4.1.7, pre-fix)
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332  # v4.1.7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run build script from checked-out code
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          chmod +x ./ci/build.sh
+          ./ci/build.sh
